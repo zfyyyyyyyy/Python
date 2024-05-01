@@ -1,0 +1,32 @@
+from selenium import webdriver  # 导入Selenium的webdriver模块
+from selenium.webdriver.chrome.service import Service  # 导入Chrome服务模块
+import time  # 导入time模块，用于时间控制
+from selenium.webdriver import ActionChains  # 导入ActionChains模块，用于执行复杂的动作序列
+
+d = webdriver.Chrome()# 初始化Chrome浏览器驱动
+d.maximize_window()# 设置浏览器窗口最大化
+d.implicitly_wait(3)# 设置隐式等待时间为3秒，即Selenium在查找元素时会等待3秒
+
+d.get('https://www.beqege.com/16747/223291.html')# 使用get方法打开小说第一页
+f = open('D:\\Python\\python练习\\随手\\爬小说\\斗破苍穹.text', 'a+')# 打开一个文件用于写入爬取的内容，使用'a+'模式，即在文件末尾追加内容
+
+p = 1# 初始化一个计数器p，用于记录翻页次数
+# 使用while True创建一个无限循环，用于循环翻页爬取
+while True:
+    content_title = d.find_element('xpath', '//*[@id="content_read"]/div/div[2]').text    # 使用xpath定位小说标题并获取其文本
+    content_text = d.find_element('xpath', '//*[@id="content"]').text    # 使用xpath定位小说内容并获取其文本
+    f.write(content_title + '\n' + content_text + '\n\n\n')    # 将获取到的标题和内容写入文件，每个部分之间用换行符分隔
+
+    time.sleep(2)    # 等待2秒，以便页面加载
+
+    A = d.find_element('xpath', '//*[@id="content_read"]/div/div[3]/a[3]')    # 使用xpath定位到下一页的链接
+    ad = ActionChains(d)    # 实例化ActionChains，用于执行动作序列
+    ad.click(A).perform()    # 执行点击动作，翻到下一页
+
+    p += 1    # 翻页成功后，计数器p加1
+    print(p)    # 打印当前翻页次数
+    time.sleep(3)    # 再次等待3秒，以便页面加载
+
+
+time.sleep(100)# 等待100秒，这个等待可能不是必须的，取决于具体需求
+d.quit()# 最后关闭浏览器
