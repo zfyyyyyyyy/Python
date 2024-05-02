@@ -1,0 +1,48 @@
+import requests
+from lxml import etree
+
+# 创建一个Session对象，它允许我们跨请求保持某些参数
+session = requests.Session()
+# 更新请求头部，特别是User-Agent，以模拟浏览器访问
+session.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76"
+})
+
+chapter_urls = ["https://www.ddyueshu.com/4_4891/391840017.html"] #存储第一章网址
+
+# 定义一个函数，用于获取指定URL的章节内容
+def fetch_chapter(url):
+    try:
+        response = session.get(url, headers=session.headers, timeout=20)# 发送HTTP GET请求，获取页面内容        
+        response.raise_for_status()# 如果响应状态码指示错误，则抛出HTTPError异常        
+        response.encoding = "gbk"# 设置响应的编码为GBK，以正确读取中文字符      
+        chapter = etree.HTML(response.text) # 使用lxml解析HTML内容     
+        
+        title = chapter.xpath('//div[@class="bookname"]/h1/text()')# 使用XPath提取章节标题   
+        content = chapter.xpath('//div[@id="content"]/text()') # 使用XPath提取章节内容
+        
+        # 提取下一章的链接，如果存在则添加到基础URL后面
+        next_url = chapter.xpath('//div[@class="bottem1"]/a[3]/@href')
+        if next_url:
+            next_url = 'https://www.ddyueshu.com' + next_url[0]
+        else:
+            print("No next chapter found.")
+        
+        # 打开文件用于写入，如果文件不存在则创建它
+        with open('D:\\Python\\python练习\\随手\\爬小说\\凡人修仙传.txt', "a+", encoding='utf-8') as f:
+            f.write(''.join(title) + '\n\n' + ''.join(content) + '\n\n')# 将标题和内容写入文件，并添加换行符
+                
+        return next_url# 返回下一章的URL
+
+    except requests.exceptions.RequestException as e:
+        print(f"Request failed: {e}")# 如果请求过程中发生错误，打印错误信息  
+        return None# 返回None表示没有下一章或请求失败
+
+# 使用迭代器和pop函数来简化循环，从列表中弹出元素直到为空
+for current_url in iter(chapter_urls.pop, None):
+    print(f"Scraping: {current_url}")
+    next_url = fetch_chapter(current_url)
+    if next_url:
+        chapter_urls.append(next_url)# 如果获取到下一章的URL，则添加到列表的末尾
+    else:
+        break # 如果没有下一章，则退出循环
